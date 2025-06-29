@@ -9,7 +9,7 @@ pygame.init()
 
 # Import game components
 from game_state import GameState
-from ui.menu import Menu, ArmyInterface
+from ui.menu import Menu, ArmyInterface, SaveDialog
 from utils.constants import *
 from unit import Unit
 
@@ -19,7 +19,21 @@ pygame.display.set_caption("Opus Battle")
 clock = pygame.time.Clock()
 
 # Initialize game state
-game_state = GameState()
+game_state = None
+
+def load_game(filename='savegame.json'):
+    """Load a saved game from file."""
+    global game_state
+    loaded_state = GameState.load_from_file(filename)
+    if loaded_state:
+        game_state = loaded_state
+        print("Game loaded successfully!")
+    else:
+        print("No saved game found or error loading, starting new game.")
+        game_state = GameState()
+
+# Try to load a saved game, or start a new one if none exists
+load_game()
 
 # Create UI components
 def create_main_menu() -> Menu:
@@ -50,19 +64,31 @@ def create_main_menu() -> Menu:
                 squad.add_unit(Unit(unit_type, 1))
                 print(f"Recruited a new {unit_type.value} to squad!")
     
+    def save_game():
+        if game_state.save_to_file('savegame.json'):
+            print("Game saved successfully!")
+        else:
+            print("Failed to save game!")
+    
+    def load_game_menu():
+        load_game('savegame.json')
+        menu.visible = False
+    
     def end_turn():
         game_state.end_turn()
         menu.visible = False
     
     def quit_game():
-        pygame.quit()
-        sys.exit()
+        menu.visible = False
+        save_dialog.show()
     
     menu = Menu([
         ("Resume", resume_game),
         ("Change Color", change_color),
         ("Army", show_army),
         ("Recruit", recruit_unit),
+        ("Save Game", save_game),
+        ("Load Game", load_game_menu),
         ("End Turn", end_turn),
         ("Quit", quit_game)
     ])
@@ -72,6 +98,22 @@ def create_main_menu() -> Menu:
 # Create UI instances
 menu = create_main_menu()
 army_interface = ArmyInterface(game_state)
+
+# Create save dialog
+def on_save_selected(slot):
+    game_state.save_to_file(f'savegame_{slot}.json')
+    print(f"Game saved to savegame_{slot}.json")
+    save_dialog.hide()
+    save_dialog.load_save_slots()  # Refresh the save slots
+
+def on_save_canceled():
+    save_dialog.hide()
+
+def on_quit_without_save():
+    global running
+    running = False
+
+save_dialog = SaveDialog(on_save_selected, on_save_canceled, on_quit_without_save)
 
 # Font for grid coordinates
 font = pygame.font.Font(None, 16)
@@ -171,25 +213,32 @@ def draw_ui():
 last_click_time = 0
 DOUBLE_CLICK_DELAY = 0.5  # seconds
 
-def handle_input():
-    """Handle all user input."""
-    global last_click_time
+def handle_input(event):
+    """Handle a single input event."""
+    global last_click_time, running
     
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
-        
-        # Let UI components handle events first
-        if menu.handle_event(event) or army_interface.handle_event(event):
-            continue
-        
+    if event.type == pygame.QUIT:
+        running = False
+        return
+    
+    # Handle save dialog events first if visible
+    if save_dialog.visible:
+        if save_dialog.handle_event(event):
+            return
+    # Then handle menu events if menu is visible
+    if menu.visible:
+        menu.handle_event(event)
+    # Then handle army interface events if visible
+    elif army_interface.visible:
+        army_interface.handle_event(event)
+    # Otherwise handle game input
+    else:
         # Handle keyboard input
         if event.type == pygame.KEYDOWN:
             # Toggle menu
             if event.key == pygame.K_TAB:
                 menu.toggle_visibility()
-            
+        
             # Handle movement when menu is closed
             elif not menu.visible and not army_interface.visible and game_state.selected_squad:
                 dx, dy = 0, 0
@@ -228,17 +277,12 @@ def handle_input():
                     army_interface.viewing_unit = 0  # Reset to first unit
                     army_interface.visible = True
                     last_click_time = 0  # Reset to prevent accidental triple-clicks
-                    continue
+                    return
             
             # Single click handling
             last_click_time = current_time
             
             if not menu.visible and not army_interface.visible:
-                # Convert mouse position to grid coordinates
-                mouse_x, mouse_y = pygame.mouse.get_pos()
-                grid_x = mouse_x // CELL_SIZE
-                grid_y = mouse_y // CELL_SIZE
-                
                 # Check if clicking on a squad
                 clicked_squad = game_state.get_squad_at(grid_x, grid_y)
                 
@@ -251,27 +295,63 @@ def handle_input():
 
 def main():
     """Main game loop."""
-    pygame.mouse.set_visible(True)
+    global running
+    running = True
     
-    while True:
-        # Handle input
-        handle_input()
+    while running:
+        # Handle events
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                # Show save dialog when clicking the window close button
+                menu.visible = False
+                save_dialog.show()
+                
+                # Show the save dialog
+                save_dialog.show()
+                
+                # Wait for the dialog to be closed
+                while save_dialog.visible and running:
+                    for e in pygame.event.get():
+                        if e.type == pygame.QUIT:
+                            running = False
+                            break
+                        save_dialog.handle_event(e)
+                    
+                    # Draw everything
+                    screen.fill(BLACK)
+                    draw_grid()
+                    draw_squads()
+                    draw_ui()
+                    menu.draw(screen) if menu.visible else None
+                    army_interface.draw(screen) if army_interface.visible else None
+                    save_dialog.draw(screen)
+                    
+                    pygame.display.flip()
+                    clock.tick(60)
+                
+                if not running:
+                    break
+            
+            # Handle input for the current event
+            handle_input(event)
         
-        # Clear screen
-        screen.fill((0, 0, 0))
-        
-        # Draw game elements
+        # Draw everything
+        screen.fill(BLACK)
         draw_grid()
         draw_squads()
         draw_ui()
         
-        # Draw UI components
-        menu.draw(screen)
-        army_interface.draw(screen)
+        # Draw UI elements on top
+        if menu.visible:
+            menu.draw(screen)
+        if army_interface.visible:
+            army_interface.draw(screen)
+        if save_dialog.visible:
+            save_dialog.draw(screen)
         
         # Update display
         pygame.display.flip()
-        clock.tick(FPS)
+        clock.tick(60)
 
 if __name__ == "__main__":
     main()

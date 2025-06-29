@@ -7,22 +7,30 @@ from enum import Enum, auto
 from utils.constants import UnitType, UNIT_STATS
 
 class Unit:
-    def __init__(self, unit_type: UnitType, level: int = 1):
-        self.unit_type = unit_type
+    def __init__(self, unit_type: UnitType, level: int = 1, **kwargs):
+        self.unit_type = unit_type if isinstance(unit_type, UnitType) else UnitType(unit_type)
         self.level = level
-        self.experience = 0
-        self.kills = 0
-        self.battles = 0
-        self.abilities = []
+        self.experience = kwargs.get('experience', 0)
+        self.kills = kwargs.get('kills', 0)
+        self.battles = kwargs.get('battles', 0)
+        self.abilities = kwargs.get('abilities', [])
+        self.future_points = kwargs.get('future_points', 0)  # FP for promotion
         
-        # Initialize base stats with random variation
-        self.base_stats = self._generate_base_stats()
+        # Initialize base stats
+        if 'base_stats' in kwargs:
+            self.base_stats = kwargs['base_stats']
+        else:
+            # Generate new base stats with random variation
+            self.base_stats = self._generate_base_stats()
         
         # Initialize stats
         self.update_stats()
         
-        # Set current HP to max HP
-        self.current_hp = self.max_hp
+        # Set current HP, using saved value if available
+        self.current_hp = kwargs.get('current_hp', self.max_hp)
+        
+        # Initialize speed from base stats
+        self.speed = self.base_stats.get('speed', 5)  # Default to 5 if not specified
     
     def _generate_base_stats(self) -> Dict[str, int]:
         """Generate base stats with random variation."""
@@ -52,9 +60,10 @@ class Unit:
         self.agility = max(1, self.agility)
         self.intelligence = max(1, self.intelligence)
         
-        # Update movement and range from base stats
+        # Update movement, range, and speed from base stats
         self.move = self.base_stats['move']
         self.range = self.base_stats['range']
+        self.speed = self.base_stats.get('speed', 5)  # Default to 5 if not specified
         
         # Set abilities
         self.abilities = stats['abilities']
@@ -101,6 +110,10 @@ class Unit:
         self.experience += xp
         xp_needed = self.level * 100
         
+        # Gain FP based on XP (1 FP per 10 XP, min 1)
+        fp_gain = max(1, xp // 10)
+        self.add_future_points(fp_gain)
+        
         if self.experience >= xp_needed:
             self.level_up()
             return True
@@ -118,15 +131,33 @@ class Unit:
     
     def can_promote(self) -> bool:
         """Check if unit can promote to a higher class."""
-        return bool(self.get_promotion_options())
+        return len(self.get_promotion_options()) > 0
     
     def get_promotion_options(self) -> List[UnitType]:
         """Get list of possible promotion options."""
         return UNIT_STATS[self.unit_type].get('promotes_to', [])
     
+    def add_future_points(self, amount: int) -> bool:
+        """Add future points to the unit. Returns True if ready to promote."""
+        if not self.can_promote():
+            return False
+            
+        self.future_points = min(100, self.future_points + amount)
+        return self.future_points >= 100
+        
+    def get_fp_percentage(self) -> float:
+        """Get the percentage of FP needed for next promotion."""
+        if not self.can_promote():
+            return 100.0
+        return (self.future_points / 100.0) * 100
+        
     def promote(self, new_type: UnitType):
         """Promote unit to a new class."""
         if new_type not in self.get_promotion_options():
+            return False
+            
+        # Check if unit has enough FP to promote
+        if self.future_points < 100:
             return False
             
         # Keep a portion of stats on promotion (80% of current)
@@ -148,11 +179,43 @@ class Unit:
         # Ensure HP doesn't go down on promotion
         self.current_hp = max(self.current_hp, self.max_hp // 2)
         
+        # Reset FP after promotion
+        self.future_points = 0
+        
         return True
     
     def is_alive(self) -> bool:
         """Check if the unit is still alive."""
         return self.current_hp > 0
+    
+    def to_dict(self) -> dict:
+        """Convert unit to a dictionary for saving."""
+        return {
+            'unit_type': self.unit_type.value,
+            'level': self.level,
+            'experience': self.experience,
+            'kills': self.kills,
+            'battles': self.battles,
+            'abilities': self.abilities,
+            'future_points': self.future_points,
+            'base_stats': self.base_stats,
+            'current_hp': self.current_hp
+        }
+        
+    @classmethod
+    def from_dict(cls, data: dict) -> 'Unit':
+        """Create a Unit instance from a dictionary."""
+        return cls(
+            unit_type=data['unit_type'],
+            level=data['level'],
+            experience=data['experience'],
+            kills=data['kills'],
+            battles=data['battles'],
+            abilities=data['abilities'],
+            future_points=data['future_points'],
+            base_stats=data['base_stats'],
+            current_hp=data['current_hp']
+        )
     
     def __str__(self):
         """String representation of the unit."""
@@ -160,12 +223,17 @@ class Unit:
     
     def get_stat_summary(self) -> str:
         """Get a formatted string of the unit's stats."""
+        fp_text = ""
+        if self.can_promote():
+            fp_text = f"FP: {self.future_points}/100 ({self.get_fp_percentage():.1f}%)\n"
+            
         return (
             f"Level: {self.level}\n"
             f"HP: {self.current_hp}/{self.max_hp}\n"
             f"Str: {self.strength}  Agi: {self.agility}\n"
             f"Int: {self.intelligence}  Mv: {self.move}\n"
             f"Range: {self.range}  XP: {self.experience}/{self.level * 100}\n"
+            f"{fp_text}"
             f"Abilities: {', '.join(self.abilities)}\n"
             f"Kills: {self.kills}  Battles: {self.battles}"
         )

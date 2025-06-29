@@ -6,7 +6,7 @@ from unit import Unit
 from utils.constants import UnitType, SCREEN_SIZE, CELL_SIZE, GRID_SIZE
 
 class GameState:
-    def __init__(self):
+    def __init__(self, save_data: dict = None):
         self.player_pos = [GRID_SIZE // 2, GRID_SIZE // 2]  # Starting at center
         self.player_color = (255, 0, 0)  # Red
         self.menu_open = False
@@ -16,7 +16,11 @@ class GameState:
         self.current_turn = 1
         self.highlighted_tiles: set[tuple[int, int]] = set()  # Tiles that can be moved to
         self.combat_log: list[str] = []  # Combat log messages
-        self.initialize_game()
+        
+        if save_data:
+            self.load_game(save_data)
+        else:
+            self.initialize_game()
     
     def initialize_game(self):
         """Initialize the game with starting squads."""
@@ -55,6 +59,42 @@ class GameState:
             if self.squads:
                 self.selected_squad = self.squads[0]
                 self.selected_squad.selected = True
+    
+    def load_game(self, save_data: dict):
+        """Load game state from a dictionary."""
+        self.player_pos = save_data.get('player_pos', [GRID_SIZE // 2, GRID_SIZE // 2])
+        self.player_color = tuple(save_data.get('player_color', (255, 0, 0)))
+        self.current_turn = save_data.get('current_turn', 1)
+        self.combat_log = save_data.get('combat_log', [])
+        
+        # Clear existing squads
+        self.squads = []
+        
+        # Rebuild squads from save data
+        for squad_data in save_data.get('squads', []):
+            squad = Squad(
+                x=squad_data['x'],
+                y=squad_data['y'],
+                color=tuple(squad_data['color']),
+                name=squad_data['name']
+            )
+            
+            # Restore squad state
+            squad.selected = squad_data.get('selected', False)
+            squad.has_acted = squad_data.get('has_acted', False)
+            squad.formation = squad_data.get('formation', squad._get_default_formation())
+            
+            # Add units to squad
+            for unit_data in squad_data.get('units', []):
+                unit = Unit.from_dict(unit_data)
+                squad.add_unit(unit)
+                
+            self.squads.append(squad)
+        
+        # Restore selected squad
+        selected_squad_index = save_data.get('selected_squad_index', -1)
+        if 0 <= selected_squad_index < len(self.squads):
+            self.selected_squad = self.squads[selected_squad_index]
     
     def create_random_squad(self, x: int, y: int, name: str = None) -> Squad:
         """
@@ -267,3 +307,64 @@ class GameState:
         
         attacker.has_acted = True
         return True
+        
+    def to_dict(self) -> dict:
+        """Convert game state to a dictionary for saving."""
+        return {
+            'player_pos': self.player_pos,
+            'player_color': self.player_color,
+            'current_turn': self.current_turn,
+            'combat_log': self.combat_log[-10:],  # Keep last 10 combat log entries
+            'squads': [squad.to_dict() for squad in self.squads],
+            'selected_squad_index': self.squads.index(self.selected_squad) if self.selected_squad else -1
+        }
+        
+    @classmethod
+    def from_dict(cls, data: dict) -> 'GameState':
+        """Create a GameState instance from a dictionary."""
+        game_state = cls()
+        game_state.player_pos = data['player_pos']
+        game_state.player_color = tuple(data['player_color'])
+        game_state.current_turn = data['current_turn']
+        game_state.combat_log = data.get('combat_log', [])
+        
+        # Rebuild squads
+        game_state.squads = []
+        for squad_data in data['squads']:
+            squad = Squad.from_dict(squad_data)
+            game_state.squads.append(squad)
+        
+        # Restore selected squad
+        selected_index = data.get('selected_squad_index', -1)
+        if 0 <= selected_index < len(game_state.squads):
+            game_state.selected_squad = game_state.squads[selected_index]
+            
+        return game_state
+        
+    def save_to_file(self, filename: str = 'savegame.json') -> bool:
+        """Save the current game state to a file."""
+        import json
+        try:
+            with open(filename, 'w') as f:
+                json.dump(self.to_dict(), f, indent=2)
+            return True
+        except Exception as e:
+            print(f"Error saving game: {e}")
+            return False
+            
+    @classmethod
+    def load_from_file(cls, filename: str = 'savegame.json') -> Optional['GameState']:
+        """Load a game state from a file."""
+        import json
+        import os
+        
+        if not os.path.exists(filename):
+            return None
+            
+        try:
+            with open(filename, 'r') as f:
+                data = json.load(f)
+            return cls.from_dict(data)
+        except Exception as e:
+            print(f"Error loading game: {e}")
+            return None

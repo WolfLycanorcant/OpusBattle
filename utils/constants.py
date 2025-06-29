@@ -63,7 +63,7 @@ UNIT_STATS = {
         'base_agi': 8, 'agi_var': 1,   # 7-9 Agi
         'base_int': 5, 'int_var': 1,   # 4-6 Int
         'growth_hp': 5, 'growth_str': 3, 'growth_agi': 2, 'growth_int': 1,
-        'move': 3, 'range': 1,
+        'move': 3, 'range': 1, 'speed': 5,  # Normal speed
         'abilities': ['Power Strike']
     },
     UnitType.APPRENTICE: {
@@ -72,7 +72,7 @@ UNIT_STATS = {
         'base_agi': 6, 'agi_var': 1,   # 5-7 Agi
         'base_int': 12, 'int_var': 2,  # 11-13 Int
         'growth_hp': 3, 'growth_str': 1, 'growth_agi': 1, 'growth_int': 4,
-        'move': 2, 'range': 2,
+        'move': 2, 'range': 2, 'speed': 3,  # Slow (mage type)
         'abilities': ['Fireball']
     },
     UnitType.SCOUT: {
@@ -81,7 +81,7 @@ UNIT_STATS = {
         'base_agi': 12, 'agi_var': 2,  # 11-13 Agi
         'base_int': 6, 'int_var': 1,   # 5-7 Int
         'growth_hp': 4, 'growth_str': 1, 'growth_agi': 4, 'growth_int': 1,
-        'move': 4, 'range': 1,
+        'move': 4, 'range': 1, 'speed': 9,  # Very fast (scout type)
         'abilities': ['Quick Attack']
     },
     # First Promotions
@@ -91,13 +91,14 @@ UNIT_STATS = {
         'base_agi': 10, 'agi_var': 1,
         'base_int': 6, 'int_var': 1,
         'growth_hp': 6, 'growth_str': 4, 'growth_agi': 2, 'growth_int': 1,
-        'move': 3, 'range': 1,
+        'move': 3, 'range': 1, 'speed': 5,  # Normal speed
         'abilities': ['Power Strike', 'Shield Bash']
     },
     UnitType.ARCHER: {
         'base_hp': 22, 'hp_var': 4,
         'base_str': 12, 'str_var': 2,
         'base_agi': 14, 'agi_var': 2,
+        'speed': 6,  # Slightly faster than normal
         'base_int': 8, 'int_var': 1,
         'growth_hp': 5, 'growth_str': 3, 'growth_agi': 5, 'growth_int': 2,
         'move': 3, 'range': 3,
@@ -109,7 +110,7 @@ UNIT_STATS = {
         'base_agi': 12, 'agi_var': 2,
         'base_int': 8, 'int_var': 1,
         'growth_hp': 7, 'growth_str': 5, 'growth_agi': 3, 'growth_int': 2,
-        'move': 3, 'range': 1,
+        'move': 3, 'range': 1, 'speed': 5,  # Normal speed
         'abilities': ['Power Strike', 'Shield Bash', 'Second Wind']
     },
     UnitType.CHAMPION: {
@@ -118,7 +119,7 @@ UNIT_STATS = {
         'base_agi': 15, 'agi_var': 3,
         'base_int': 10, 'int_var': 2,
         'growth_hp': 9, 'growth_str': 6, 'growth_agi': 4, 'growth_int': 3,
-        'move': 4, 'range': 1,
+        'move': 4, 'range': 1, 'speed': 6,  # Slightly above normal (elite warrior)
         'abilities': ['Power Strike', 'Shield Bash', 'Second Wind', 'Battle Focus']
     },
     UnitType.RANGER: {
@@ -127,7 +128,7 @@ UNIT_STATS = {
         'base_agi': 18, 'agi_var': 3,
         'base_int': 10, 'int_var': 2,
         'growth_hp': 6, 'growth_str': 4, 'growth_agi': 6, 'growth_int': 3,
-        'move': 4, 'range': 4,
+        'move': 4, 'range': 4, 'speed': 7,  # Fast (ranger type)
         'abilities': ['Precise Shot', 'Quick Draw', 'Camouflage']
     },
     UnitType.SNIPER: {
@@ -136,7 +137,7 @@ UNIT_STATS = {
         'base_agi': 22, 'agi_var': 4,
         'base_int': 12, 'int_var': 2,
         'growth_hp': 8, 'growth_str': 5, 'growth_agi': 7, 'growth_int': 4,
-        'move': 4, 'range': 5,
+        'move': 4, 'range': 5, 'speed': 7,  # Fast (elite archer)
         'abilities': ['Precise Shot', 'Quick Draw', 'Camouflage', 'Critical Shot']
     },
     UnitType.KNIGHT: {
@@ -145,7 +146,7 @@ UNIT_STATS = {
         'base_agi': 10, 'agi_var': 2,
         'base_int': 6, 'int_var': 1,
         'growth_hp': 8, 'growth_str': 6, 'growth_agi': 3, 'growth_int': 2,
-        'move': 3, 'range': 1,
+        'move': 3, 'range': 1, 'speed': 4,  # Slightly slow (heavy armor)
         'abilities': ['Charge', 'Shield Bash']
     },
     UnitType.PALADIN: {
@@ -154,7 +155,7 @@ UNIT_STATS = {
         'base_agi': 12, 'agi_var': 2,
         'base_int': 8, 'int_var': 2,
         'growth_hp': 9, 'growth_str': 7, 'growth_agi': 4, 'growth_int': 3,
-        'move': 3, 'range': 1,
+        'move': 4, 'range': 1, 'speed': 6,  # Slightly faster (mounted)
         'abilities': ['Charge', 'Shield Bash', 'Healing Aura']
     },
     UnitType.TEMPLAR: {
@@ -163,7 +164,7 @@ UNIT_STATS = {
         'base_agi': 15, 'agi_var': 3,
         'base_int': 10, 'int_var': 2,
         'growth_hp': 11, 'growth_str': 8, 'growth_agi': 5, 'growth_int': 4,
-        'move': 4, 'range': 1,
+        'move': 5, 'range': 1, 'speed': 7,  # Fast (elite mounted)
         'abilities': ['Charge', 'Shield Bash', 'Healing Aura', 'Battle Focus']
     },
     UnitType.MAGE: {
@@ -172,7 +173,7 @@ UNIT_STATS = {
         'base_agi': 8, 'agi_var': 2,
         'base_int': 20, 'int_var': 4,
         'growth_hp': 4, 'growth_str': 2, 'growth_agi': 3, 'growth_int': 6,
-        'move': 2, 'range': 3,
+        'move': 2, 'range': 3, 'speed': 3,  # Slow (mage type)
         'abilities': ['Fireball', 'Mana Shield']
     },
     UnitType.WIZARD: {
@@ -181,7 +182,7 @@ UNIT_STATS = {
         'base_agi': 10, 'agi_var': 2,
         'base_int': 25, 'int_var': 5,
         'growth_hp': 5, 'growth_str': 3, 'growth_agi': 4, 'growth_int': 7,
-        'move': 2, 'range': 4,
+        'move': 2, 'range': 4, 'speed': 4,  # Still slow but slightly better than base mage
         'abilities': ['Fireball', 'Mana Shield', 'Teleport']
     },
     UnitType.ARCHMAGE: {
@@ -190,7 +191,7 @@ UNIT_STATS = {
         'base_agi': 12, 'agi_var': 3,
         'base_int': 30, 'int_var': 6,
         'growth_hp': 6, 'growth_str': 4, 'growth_agi': 5, 'growth_int': 8,
-        'move': 3, 'range': 5,
+        'move': 3, 'range': 5, 'speed': 5,  # Average (elite mage)
         'abilities': ['Fireball', 'Mana Shield', 'Teleport', 'Elemental Mastery']
     },
     UnitType.CLERIC: {
@@ -199,7 +200,7 @@ UNIT_STATS = {
         'base_agi': 10, 'agi_var': 2,
         'base_int': 15, 'int_var': 3,
         'growth_hp': 5, 'growth_str': 3, 'growth_agi': 4, 'growth_int': 5,
-        'move': 2, 'range': 2,
+        'move': 2, 'range': 2, 'speed': 3,  # Slow (healer type)
         'abilities': ['Healing Touch', 'Shield Bash']
     },
     UnitType.PRIEST: {
@@ -208,7 +209,7 @@ UNIT_STATS = {
         'base_agi': 12, 'agi_var': 3,
         'base_int': 20, 'int_var': 4,
         'growth_hp': 6, 'growth_str': 4, 'growth_agi': 5, 'growth_int': 6,
-        'move': 2, 'range': 3,
+        'move': 2, 'range': 3, 'speed': 3,  # Still slow (healer type)
         'abilities': ['Healing Touch', 'Shield Bash', 'Resurrection']
     },
     UnitType.BISHOP: {
@@ -217,7 +218,7 @@ UNIT_STATS = {
         'base_agi': 15, 'agi_var': 3,
         'base_int': 25, 'int_var': 5,
         'growth_hp': 7, 'growth_str': 5, 'growth_agi': 6, 'growth_int': 7,
-        'move': 3, 'range': 4,
+        'move': 3, 'range': 4, 'speed': 4,  # Slightly better than base (elite healer)
         'abilities': ['Healing Touch', 'Shield Bash', 'Resurrection', 'Holy Aura']
     },
     UnitType.ROGUE: {
@@ -226,7 +227,7 @@ UNIT_STATS = {
         'base_agi': 16, 'agi_var': 3,
         'base_int': 8, 'int_var': 2,
         'growth_hp': 5, 'growth_str': 3, 'growth_agi': 6, 'growth_int': 2,
-        'move': 4, 'range': 1,
+        'move': 4, 'range': 1, 'speed': 8,  # Fast (rogue type)
         'abilities': ['Quick Attack', 'Stealth']
     },
     UnitType.ASSASSIN: {
@@ -235,7 +236,7 @@ UNIT_STATS = {
         'base_agi': 20, 'agi_var': 4,
         'base_int': 10, 'int_var': 2,
         'growth_hp': 6, 'growth_str': 4, 'growth_agi': 7, 'growth_int': 3,
-        'move': 5, 'range': 1,
+        'move': 4, 'range': 1, 'speed': 9,  # Very fast (assassin type)
         'abilities': ['Quick Attack', 'Stealth', 'Critical Strike']
     },
     UnitType.NINJA: {
@@ -244,7 +245,7 @@ UNIT_STATS = {
         'base_agi': 25, 'agi_var': 5,
         'base_int': 12, 'int_var': 3,
         'growth_hp': 7, 'growth_str': 5, 'growth_agi': 8, 'growth_int': 4,
-        'move': 5, 'range': 2,
+        'move': 5, 'range': 2, 'speed': 10,  # Fastest (ninja type)
         'abilities': ['Quick Attack', 'Stealth', 'Critical Strike', 'Smoke Bomb'],
         'promotes_to': []
     }
